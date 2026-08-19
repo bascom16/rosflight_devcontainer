@@ -1,5 +1,5 @@
 {
-    "name": "ROSflight Sim DevPod",
+    "name": "ROSflight Sim Devcontainer",
 
     // Builds the ROSflight base image (osrf/ros:${ROS_DISTRO}-desktop).
     // Change the ROS distro in exactly one place: the ROS_DISTRO build arg
@@ -23,8 +23,8 @@
     "remoteUser": "rosflight",
 
     // Host access for ROS 2 discovery (DDS) and shared-memory transport.
-    // network=host and ipc=host assume a LOCAL Docker DevPod provider; some
-    // remote providers do not support them (see README).
+    // network=host and ipc=host assume a LOCAL Docker-based runner; some
+    // remote/cloud providers do not support them (see README).
     "runArgs": [
         "--network=host",
         "--ipc=host"

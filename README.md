@@ -1,40 +1,42 @@
-# ROSflight DevPod
+# ROSflight Devcontainer
 
-A [DevPod](https://devpod.sh) container for developing and running
-[ROSflight](https://rosflight.org) simulations.
+A [devcontainer](https://containers.dev/) for developing and running
+[ROSflight](https://rosflight.org) simulations, with AI coding agents
+(Claude Code, Codex CLI) preinstalled.
 
-## Prerequisites
+Everything lives in a standard `.devcontainer/` configuration, so it works with
+any tool that implements the
+[Dev Container specification](https://containers.dev/implementors/spec/) —
+Devsy, the VS Code Dev Containers extension, the `devcontainer` CLI, GitHub
+Codespaces, and others. **[Devsy](https://devsy.sh/) with the Docker provider is
+the recommended default.**
 
-Install the following:
+## Quick start (Devsy)
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [DevPod](https://devpod.sh/docs/getting-started/install) (CLI or desktop app)
-- An X11 server on the host (standard on Linux) for GUI sim tools
+(Skip steps 1–3 if you've done this before)
 
-Add Docker as a provider the first time you install DevPod:
-
+1. [Install Docker](https://docs.docker.com/engine/install/)
+2. [Install the Devsy CLI](https://devsy.sh/docs/getting-started/install) — on macOS/Linux:
 ```bash
-devpod provider add docker
-devpod provider use docker
+brew install devsy-org/homebrew-tap/devsy
 ```
-
-## Quick start
-
-Run the following from the project's root directory:
-
+3. Add Docker to Devsy as the default provider:
 ```bash
-devpod up . --ide vscode
+devsy provider add docker
+devsy provider use docker
 ```
+4. Clone this repository and `cd` into it
+5. Run `devsy workspace up . --ide vscode`
 
-This will launch a VSCode window that is ssh'ed into a Docker container with ROSflight and ROS2 installed. 
-On first launch, the workspace is built using `colcon build`.
-**The first
-build will take several minutes.**
+This launches a VS Code window connected to a container with ROS 2 and
+ROSflight installed. On first launch the workspace is cloned and built with
+`colcon build` — **the first build takes several minutes.**
 
-If you prefer plain Docker/VS Code, this is a standard devcontainer — "Reopen in
-Container" from VS Code works too.
+With VS Code's Dev Containers extension instead, "Reopen in Container" does the
+same thing.
 
-
+You'll also want an X11 server on the host (standard on Linux) for the GUI sim
+tools.
 
 ## Running a simulation
 
@@ -53,7 +55,8 @@ ros2 launch rosplane_sim sim.launch.py     # ROSplane (fixed-wing)
 ros2 launch roscopter_sim sim.launch.py    # ROScopter (multirotor)
 ```
 
-If GUI windows don't appear, run the following on the **host computer** (not in the DevPod container): `xhost +local:docker`.
+If GUI windows don't appear, run the following on the **host computer** (not in
+the container): `xhost +local:docker`.
 
 
 ## Troubleshooting
@@ -79,6 +82,8 @@ standalone (RViz) and HoloOcean sims are available there.
 
 - **Claude Code** and the **Codex CLI**
   - Run `claude` or `codex` to launch these.
+  - Claude Code runs with permission prompts bypassed (safe within containers);
+    edit `.claude/settings.json` to change this.
 - **uv**, plus a uv-managed **Python 3.12**
 - **Rust** (rustup, stable toolchain)
 - **tmux** and **Zellij**
@@ -96,3 +101,9 @@ standalone (RViz) and HoloOcean sims are available there.
 ├── AGENTS.md        # guidance for AI coding agents
 └── CLAUDE.md        # imports AGENTS.md
 ```
+
+## Resources
+
+- [Dev Container Specification](https://containers.dev/implementors/spec/)
+- [Devsy Documentation](https://devsy.sh/docs)
+- [ROSflight Documentation](https://docs.rosflight.org/latest/)

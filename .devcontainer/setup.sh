@@ -3,7 +3,7 @@
 # postCreateCommand for the ROSflight Sim devcontainer.
 #
 # 1. Installs the AI coding agents (Claude Code + Codex), matching the
-#    jusevitch/claude_code_devpod template, plus uv, Rust, tmux and Zellij.
+#    jusevitch/agent_devcontainer template, plus uv, Rust, tmux and Zellij.
 # 2. Wires up ROS 2 + workspace sourcing for both bash (the default shell) and
 #    zsh.
 # 3. Hands off to scripts/setup_workspace.sh to clone the ROSflight repos and

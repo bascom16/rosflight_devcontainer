@@ -5,7 +5,8 @@
 
 # ROSflight source repositories — cloned by scripts/setup_workspace.sh.
 # They are kept out of this repo so it stays a lightweight, reproducible
-# DevPod template. Run the setup script (or `devpod up`) to populate them.
+# devcontainer template. Run the setup script (or start the container) to
+# populate them.
 /src/rosflight_ros_pkgs/
 /src/rosplane/
 /src/roscopter/

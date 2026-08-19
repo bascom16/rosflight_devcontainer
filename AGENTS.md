@@ -1,8 +1,12 @@
 # ROSflight Simulation Workspace
 
-This is a ROS 2 workspace and DevPod container for running **ROSflight**
-simulations, with AI coding agents (Claude Code, Codex) preinstalled. It is
-modeled on the [`jusevitch/claude_code_devpod`](https://github.com/jusevitch/claude_code_devpod)
+This is a ROS 2 workspace and [devcontainer](https://containers.dev/) for
+running **ROSflight** simulations, with AI coding agents (Claude Code, Codex)
+preinstalled. It works with any tool implementing the Dev Container spec
+([Devsy](https://devsy.sh/) with the Docker provider is the recommended
+default, but the VS Code Dev Containers extension, the `devcontainer` CLI, and
+Codespaces work too). It is modeled on the
+[`jusevitch/agent_devcontainer`](https://github.com/jusevitch/agent_devcontainer)
 template and follows the official
 [ROSflight sim install docs](https://docs.rosflight.org/latest/user-guide/installation/installation-sim/).
 
