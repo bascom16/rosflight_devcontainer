@@ -40,6 +40,15 @@
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
     ],
 
+    // Browser-viewable virtual display (Xvfb + noVNC) for when host X11 can't
+    // run the GUIs, e.g. macOS/XQuartz. Started on every container start; open
+    // http://localhost:6080/vnc.html?autoconnect=1&resize=scale
+    "forwardPorts": [6080],
+    "portsAttributes": {
+        "6080": { "label": "Sim display (noVNC)", "onAutoForward": "silent" }
+    },
+    "postStartCommand": "bash scripts/sim_display.sh start",
+
     "customizations": {
         "vscode": {
             // bash is the default shell (see the useradd --shell in the

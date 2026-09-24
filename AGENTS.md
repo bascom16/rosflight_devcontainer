@@ -19,6 +19,7 @@ template and follows the official
   - `.bash_aliases` — git + colcon shortcuts
 - `.claude/settings.json` — Claude Code runs with `bypassPermissions` inside the container
 - `scripts/setup_workspace.sh` — clones the ROSflight repos, runs `rosdep`, builds with `colcon`
+- `scripts/sim_display.sh` — browser-viewable virtual X display (Xvfb + noVNC on port 6080) for the sim GUIs
 - `src/` — ROS 2 packages (cloned here; gitignored)
   - `rosflight_ros_pkgs` — core ROS stack: `rosflight_io`, `rosflight_sim`, `rosflight_msgs`, and the `rosflight_firmware` submodule (SIL)
   - `rosplane` — fixed-wing autopilot (`rosplane_sim`)
@@ -73,6 +74,13 @@ ros2 launch roscopter_sim sim.launch.py     # multirotor
 
 GUI apps (RViz, Gazebo, PlotJuggler) display on the host over X11. If windows do
 not appear, run `xhost +local:docker` on the host.
+
+On macOS (XQuartz only offers OpenGL 1.4; RViz needs 1.5+) or without a host
+X server, use the virtual display instead: `scripts/sim_display.sh` runs Xvfb
+(Mesa llvmpipe) + noVNC on `DISPLAY=:99`, viewable at
+`http://localhost:6080/vnc.html?autoconnect=1&resize=scale`. It is started by
+`postStartCommand`, and new shells switch to `DISPLAY=:99` when the host
+display is unusable.
 
 ## Included tools
 

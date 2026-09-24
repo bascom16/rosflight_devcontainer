@@ -58,6 +58,21 @@ ros2 launch roscopter_sim sim.launch.py    # ROScopter (multirotor)
 If GUI windows don't appear, run the following on the **host computer** (not in
 the container): `xhost +local:docker`.
 
+### Viewing the GUI in a browser (macOS, or no host X server)
+
+On macOS, RViz can't run through XQuartz: XQuartz only offers OpenGL 1.4 to
+containers, and RViz needs at least 1.5. Instead, the container runs a virtual
+display with software OpenGL (Xvfb + noVNC). It starts automatically each time
+the container starts. Open it in your browser:
+
+**http://localhost:6080/vnc.html?autoconnect=1&resize=scale**
+
+New shells set `DISPLAY=:99` automatically when the host display is unusable,
+so `ros2 launch ...` windows show up there. Manage the display with
+`bash scripts/sim_display.sh [start|stop|restart|status]`. Rendering happens on
+the CPU, so expect it to be slower than native (especially on Apple Silicon,
+where the container runs under x86 emulation).
+
 
 ## Troubleshooting
 

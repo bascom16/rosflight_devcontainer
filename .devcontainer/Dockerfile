@@ -44,6 +44,21 @@ RUN apt-get update \
         locales \
     && rm -rf /var/lib/apt/lists/*
 
+# Virtual X display for the sim GUIs, viewed in a browser via noVNC
+# (scripts/sim_display.sh). Xvfb renders with Mesa llvmpipe, which provides
+# modern OpenGL; needed on macOS, where XQuartz only offers OpenGL 1.4 and RViz
+# fails to start.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        xvfb \
+        x11vnc \
+        novnc \
+        websockify \
+        fluxbox \
+        x11-utils \
+        mesa-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 # Non-root user matching the ROSflight conventions (bash login shell; zsh is
 # still installed and usable, it is just not the default. dialout/plugdev for
 # USB flight-controller access). Passwordless sudo so setup.sh can run

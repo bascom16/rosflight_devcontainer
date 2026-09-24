@@ -20,3 +20,6 @@
 *~
 .DS_Store
 .idea/
+
+# SIL firmware parameter storage (written by sil_board)
+rosflight_memory/

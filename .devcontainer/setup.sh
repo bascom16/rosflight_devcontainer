@@ -180,6 +180,11 @@ setup_ros_sourcing() {
     # Temporary fix for running ROS in Docker (matches ROSflight image).
     add_line "${rc}" "ulimit -n 1024"
 }
+# Fall back to the virtual display (scripts/sim_display.sh) when the host
+# display is unusable, e.g. on macOS where DISPLAY is a host-only launchd path.
+for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
+    add_line "${rc}" 'if ! timeout 1 xdpyinfo >/dev/null 2>&1 && DISPLAY=:99 timeout 1 xdpyinfo >/dev/null 2>&1; then export DISPLAY=:99; fi'
+done
 setup_ros_sourcing "${HOME}/.bashrc" "bash"
 setup_ros_sourcing "${HOME}/.zshrc" "zsh"
 # ROS 2 CLI autocompletion for zsh.
