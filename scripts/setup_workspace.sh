@@ -12,6 +12,11 @@
 # Environment variables:
 #   ROS_DISTRO           ROS 2 distro to source (default: humble)
 #   ROSFLIGHT_SKIP_BUILD if set to 1, clone + rosdep only (skip colcon build)
+#   ROSFLIGHT_BUILD_WORKERS  packages colcon builds in parallel (default: 2)
+#   ROSFLIGHT_BUILD_JOBS     compile jobs per package, i.e. make -j (default:
+#                            ~1 per 2 GB of RAM, capped at the CPU count). The
+#                            default keeps the build from running out of memory
+#                            in small Docker VMs such as Docker Desktop on macOS.
 
 set -euo pipefail
 
@@ -83,8 +88,24 @@ rosdep install --from-paths src --ignore-src --rosdistro "${ROS_DISTRO}" -y
 if [ "${ROSFLIGHT_SKIP_BUILD}" = "1" ]; then
     log "ROSFLIGHT_SKIP_BUILD=1 set; skipping colcon build."
 else
+    # Limit build parallelism by available memory. An unbounded colcon build
+    # starts roughly one compiler per CPU per package, which is killed by the
+    # OOM killer in small VMs (e.g. Docker Desktop's ~8 GB default on macOS).
+    mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+    cgroup_max="$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)"
+    if [[ "${cgroup_max}" =~ ^[0-9]+$ ]] && (( cgroup_max / 1024 < mem_kb )); then
+        mem_kb=$(( cgroup_max / 1024 ))
+    fi
+    default_jobs=$(( mem_kb / (2 * 1024 * 1024) ))
+    (( default_jobs > $(nproc) )) && default_jobs="$(nproc)"
+    (( default_jobs < 1 )) && default_jobs=1
+    ROSFLIGHT_BUILD_JOBS="${ROSFLIGHT_BUILD_JOBS:-${default_jobs}}"
+    ROSFLIGHT_BUILD_WORKERS="${ROSFLIGHT_BUILD_WORKERS:-2}"
+
     log "Building the workspace with colcon (this can take several minutes)..."
-    colcon build --symlink-install
+    log "Parallelism: ${ROSFLIGHT_BUILD_WORKERS} packages x ${ROSFLIGHT_BUILD_JOBS} jobs ($(( mem_kb / 1024 / 1024 )) GB RAM detected)"
+    MAKEFLAGS="-j${ROSFLIGHT_BUILD_JOBS}" \
+        colcon build --symlink-install --parallel-workers "${ROSFLIGHT_BUILD_WORKERS}"
 fi
 
 # --- Done ---------------------------------------------------------------------

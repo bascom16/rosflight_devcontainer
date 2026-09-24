@@ -51,6 +51,9 @@ colcon build --symlink-install --packages-select <package_name>
 ```
 
 If memory is constrained: `colcon build --executor sequential`.
+`scripts/setup_workspace.sh` already limits parallelism by available RAM
+(override with `ROSFLIGHT_BUILD_WORKERS` / `ROSFLIGHT_BUILD_JOBS`), because an
+unbounded build runs out of memory in Docker Desktop's default VM on macOS.
 
 ## Running simulations
 
