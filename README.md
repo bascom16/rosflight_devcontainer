@@ -66,6 +66,26 @@ check the **Ports** panel for the address of port 6080 (usually
 You'll also want an X11 server on the host (standard on Linux) for the GUI sim
 tools.
 
+## What gets cloned into `src/`
+
+`scripts/setup_workspace.sh` (run at container creation) clones these into
+`src/`, which is gitignored:
+
+| Repo | Notes |
+|---|---|
+| `rosflight_ros_pkgs` | core ROS stack, with the `rosflight_firmware` submodule |
+| `rosplane`, `roscopter` | fixed-wing and multirotor autopilots |
+| `rosevtol` | **private**; cloned over HTTPS, so it needs your GitHub credentials in the container (VS Code and Devsy forward them) |
+| `rosflight_docs` | mkdocs source of docs.rosflight.org (not a ROS package) |
+| `rosflight_viz_gazebo` | modern Gazebo (Harmonic) visualizer, cloned into `rosflight_sim/simulators/`. Only on non-Humble distros, because it needs Gazebo Harmonic + `ros_gz`, which have no Humble binaries (set `ROSFLIGHT_VIZ_GAZEBO=1` to force it). Jazzy also needs `ros-jazzy-ros-gz`, which the image does not install yet. |
+
+If `rosevtol` could not be cloned (you will see a warning in
+`/tmp/rosflight_setup.log`), make sure Git can reach GitHub from inside the
+container (run `gh auth login`, or open the container from VS Code/Devsy on a
+Mac with GitHub credentials in the keychain) and re-run
+`bash scripts/setup_workspace.sh`; it is safe to re-run and only clones what is
+missing. To change the list, edit `REPOS` in that script.
+
 ## Running a simulation
 
 From the workspace root (open a fresh shell so ROS is sourced, or

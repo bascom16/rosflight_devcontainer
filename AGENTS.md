@@ -25,6 +25,9 @@ template and follows the official
   - `rosflight_ros_pkgs` — core ROS stack: `rosflight_io`, `rosflight_sim`, `rosflight_msgs`, and the `rosflight_firmware` submodule (SIL)
   - `rosplane` — fixed-wing autopilot (`rosplane_sim`)
   - `roscopter` — multirotor autopilot (`roscopter_sim`)
+  - `rosevtol` — private eVTOL repo; cloned over HTTPS, so it needs GitHub credentials in the container. If the clone fails, `setup_workspace.sh` only warns: sign in (VS Code/Devsy forward your Git credentials, or `gh auth login`) and re-run it
+  - `rosflight_docs` — mkdocs source of docs.rosflight.org (not a ROS package)
+  - `rosflight_ros_pkgs/rosflight_sim/simulators/rosflight_viz_gazebo` — modern Gazebo (Harmonic) visualizer; cloned only on non-Humble distros (`ROSFLIGHT_VIZ_GAZEBO=1` forces it, `0` disables it) because it needs Gazebo Harmonic + `ros_gz`, which have no Humble binaries
 
 ## ROS distribution
 
@@ -129,7 +132,7 @@ that colcon's `install/setup.bash` cannot be sourced from zsh (it relies on
 
 ## Conventions
 
-- The three `src/` repos are cloned, not vendored — do not commit their contents
+- The `src/` repos are cloned, not vendored — do not commit their contents
   to this repo. Edit them in place; each has its own upstream git history.
 - Keep `scripts/setup_workspace.sh` idempotent (it must be safe to re-run).
 - `rosflight_firmware` is a git submodule of `rosflight_ros_pkgs`.
