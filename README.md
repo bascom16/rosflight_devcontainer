@@ -33,7 +33,35 @@ ROSflight installed. On first launch the workspace is cloned and built with
 `colcon build` — **the first build takes several minutes.**
 
 With VS Code's Dev Containers extension instead, "Reopen in Container" does the
-same thing.
+same thing; see the next section.
+
+### Opening it in VS Code (one click)
+
+If you use VS Code, the easiest way in is the
+[Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers):
+
+1. Open this folder in VS Code (`code .`).
+2. Click **Reopen in Container** in the popup, or run **Dev Containers: Reopen in
+   Container** from the command palette. The first time builds the image and the
+   workspace, which takes several minutes (watch the progress in the terminal that
+   opens).
+3. From then on, reopen it with **File → Open Recent** and pick the entry labelled
+   `[Dev Container]`. VS Code starts the container for you if it is stopped
+   (Docker must be running).
+
+Use the integrated terminal to run the sims. VS Code forwards the container's
+ports to your Mac automatically, so the browser display needs no extra setup;
+check the **Ports** panel for the address of port 6080 (usually
+`localhost:6080`, or another port such as 6081 if 6080 is taken). Ignore port
+5900: that is the raw VNC port, not a web page.
+
+> **Use either Devsy or VS Code for a given checkout, not both at once.** Both
+> start a container that uses host networking, ROS DDS discovery, port 6080 and
+> the shared X11 display `:99`, so a second container ends up sharing (or fighting
+> over) the first one's virtual display. Stop one before starting the other
+> (`devsy workspace stop <workspace-name>`, or stop the container in Docker
+> Desktop / the VS Code **Dev Containers: Stop Container**). They do share the
+> checkout's `build/` and `install/`, which is fine.
 
 You'll also want an X11 server on the host (standard on Linux) for the GUI sim
 tools.
