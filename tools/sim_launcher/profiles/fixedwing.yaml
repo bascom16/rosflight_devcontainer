@@ -1,0 +1,22 @@
+# Vehicle profile for the sim launcher (format: see multirotor.yaml).
+name: Fixed-wing (rosplane)
+airframe: fixedwing
+
+sim:
+  package: rosflight_sim
+  launch: fixedwing_standalone.launch.py
+  args: {}                    # e.g. dynamics_param_file: <path>
+
+firmware:
+  param_file: "{share:rosflight_sim}/params/fixedwing_firmware.yaml"
+
+autopilot:
+  package: rosplane_sim
+  launch: sim.launch.py
+  args: {}                    # e.g. aircraft: anaconda, control_type: default
+
+mission:
+  service: /load_mission_from_file
+  files:
+    # rosplane does not install its missions/ directory, so use the source tree.
+    - "{ws}/src/rosplane/rosplane/missions/*.yaml"

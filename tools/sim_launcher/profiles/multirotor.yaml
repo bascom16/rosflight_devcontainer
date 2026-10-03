@@ -1,0 +1,23 @@
+# Vehicle profile for the sim launcher. Placeholders in paths:
+#   {ws}          workspace root (/workspaces/rosflight_devcontainer)
+#   {share:PKG}   installed share directory of ROS package PKG
+name: Multirotor (roscopter)
+airframe: multirotor          # also names the working dir that holds rosflight_memory/
+
+sim:
+  package: rosflight_sim
+  launch: multirotor_standalone.launch.py
+  args: {}                    # use_vimfly is added by the launcher
+
+firmware:
+  param_file: "{share:rosflight_sim}/params/multirotor_firmware/multirotor_combined.yaml"
+
+autopilot:
+  package: roscopter_sim
+  launch: sim.launch.py
+  args: {}
+
+mission:
+  service: /path_planner/load_mission_from_file   # rosflight_msgs/srv/ParamFile
+  files:                                          # globs; the first match is the default
+    - "{share:roscopter}/params/multirotor_mission.yaml"

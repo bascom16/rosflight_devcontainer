@@ -45,13 +45,17 @@
     ],
 
     // Browser-viewable virtual display (Xvfb + noVNC) for when host X11 can't
-    // run the GUIs, e.g. macOS/XQuartz. Started on every container start; open
-    // http://localhost:6080/vnc.html?autoconnect=1&resize=scale
-    "forwardPorts": [6080],
+    // run the GUIs, e.g. macOS/XQuartz, and the sim launcher GUI that embeds it.
+    // Both are started on every container start; open http://localhost:8090
+    // (launcher) or http://localhost:6080/vnc.html?autoconnect=1&resize=scale
+    "forwardPorts": [8090, 6080],
     "portsAttributes": {
+        "8090": { "label": "Sim launcher", "onAutoForward": "notify" },
         "6080": { "label": "Sim display (noVNC)", "onAutoForward": "silent" }
     },
-    "postStartCommand": "bash scripts/sim_display.sh start",
+    // The launcher must not block container start if it fails (e.g. before
+    // the first setup has installed uv), hence '|| true'.
+    "postStartCommand": "bash scripts/sim_display.sh start && (bash scripts/sim_launcher.sh start || true)",
 
     "customizations": {
         "vscode": {

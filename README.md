@@ -51,12 +51,12 @@ If you use VS Code, the easiest way in is the
 
 Use the integrated terminal to run the sims. VS Code forwards the container's
 ports to your Mac automatically, so the browser display needs no extra setup;
-check the **Ports** panel for the address of port 6080 (usually
-`localhost:6080`, or another port such as 6081 if 6080 is taken). Ignore port
-5900: that is the raw VNC port, not a web page.
+check the **Ports** panel for the addresses of port 8090 (the sim launcher) and
+port 6080 (usually `localhost:6080`, or another port such as 6081 if 6080 is
+taken). Ignore port 5900: that is the raw VNC port, not a web page.
 
 > **Use either Devsy or VS Code for a given checkout, not both at once.** Both
-> start a container that uses host networking, ROS DDS discovery, port 6080 and
+> start a container that uses host networking, ROS DDS discovery, ports 6080 and 8090 and
 > the shared X11 display `:99`, so a second container ends up sharing (or fighting
 > over) the first one's virtual display. Stop one before starting the other
 > (`devsy workspace stop <workspace-name>`, or stop the container in Docker
@@ -86,9 +86,36 @@ Mac with GitHub credentials in the keychain) and re-run
 `bash scripts/setup_workspace.sh`; it is safe to re-run and only clones what is
 missing. To change the list, edit `REPOS` in that script.
 
+## Sim launcher (browser GUI)
+
+The easiest way to run a sim is the launcher at **http://localhost:8090**. It
+starts automatically with the container, and every new terminal prints its
+address (click it in VS Code's terminal), starting the launcher first if it
+isn't running. Pick a vehicle (multirotor/ROScopter or
+fixed-wing/ROSplane), an RC input (simulated RC or VimFly) and a mission, then
+press **Run mission**. It starts the sim and autopilot, sets up the firmware the
+first time, loads the mission, arms, and hands control to the autopilot. The
+page shows the sim display, each step's logs and the armed/control state.
+**Stop all** shuts down everything it started; **Kill all ROS processes** also
+stops ROS nodes started from terminals, for a clean restart.
+
+On macOS with Devsy, forward its port together with the display's (see the
+next section):
+
+```bash
+devsy workspace ssh <workspace-name> -L 8090:localhost:8090 -L 6080:localhost:6080
+```
+
+Manage it with `bash scripts/sim_launcher.sh [start|stop|restart|status]`. Its
+log is `/tmp/sim_launcher/app.log`, and each process's output is in
+`/tmp/sim_launcher/`. The launcher runs each vehicle type from its own directory,
+`~/.local/state/sim_launcher/<airframe>/`, so the saved firmware settings
+(`rosflight_memory/`) for multirotor and fixed-wing don't overwrite each other.
+Browser-gamepad (joystick) input is planned but not implemented yet.
+
 ## Running a simulation
 
-From the workspace root (open a fresh shell so ROS is sourced, or
+To run the sims by hand instead, from the workspace root (open a fresh shell so ROS is sourced, or
 `source install/setup.bash`):
 
 ```bash
@@ -209,7 +236,8 @@ standalone (RViz) and HoloOcean sims are available there.
 .
 ├── .devcontainer/   # Dockerfile, devcontainer.json, setup.sh, .bash_aliases
 ├── .claude/         # Claude Code settings (bypassPermissions)
-├── scripts/         # setup_workspace.sh
+├── scripts/         # setup_workspace.sh, sim_display.sh, sim_launcher.sh
+├── tools/           # sim_launcher/ (browser GUI; its own uv project)
 ├── src/             # ROSflight repos (cloned by the setup script; gitignored)
 ├── AGENTS.md        # guidance for AI coding agents
 └── CLAUDE.md        # imports AGENTS.md

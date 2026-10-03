@@ -99,6 +99,15 @@ if command -v uv >/dev/null 2>&1; then
     uv python install 3.12 || log "WARNING: 'uv python install 3.12' failed (continuing)."
 fi
 
+# --- Sim launcher (browser GUI, tools/sim_launcher) ---------------------------
+# Its own uv environment (Python 3.12 + NiceGUI), separate from ROS's Python.
+# Started by postStartCommand via scripts/sim_launcher.sh.
+if command -v uv >/dev/null 2>&1; then
+    log "Syncing the sim launcher's Python environment..."
+    (unset PYTHONPATH VIRTUAL_ENV; uv sync --quiet --project "${WS_ROOT}/tools/sim_launcher") \
+        || log "WARNING: sim launcher 'uv sync' failed (continuing)."
+fi
+
 # --- Rust (rustup toolchain) --------------------------------------------------
 if ! command -v rustc >/dev/null 2>&1; then
     log "Installing Rust (rustup)..."
@@ -209,6 +218,13 @@ add_line "${HOME}/.zshrc" "ulimit -n 1024"
 # ROS 2 CLI autocompletion for zsh.
 add_line "${HOME}/.zshrc" 'eval "$(register-python-argcomplete3 ros2)"'
 add_line "${HOME}/.zshrc" 'eval "$(register-python-argcomplete3 colcon)"'
+
+# Interactive shells print the sim launcher's URL (and start it if it isn't
+# running). ~/.bashrc returns early for non-interactive shells before this line,
+# and ~/.zshrc is only read by interactive ones, so scripts stay quiet.
+LAUNCHER_BANNER="[ -f \"${WS_ROOT}/scripts/sim_launcher.sh\" ] && bash \"${WS_ROOT}/scripts/sim_launcher.sh\" banner"
+add_line "${HOME}/.bashrc" "${LAUNCHER_BANNER}"
+add_line "${HOME}/.zshrc" "${LAUNCHER_BANNER}"
 
 # --- Workspace: clone repos + rosdep + colcon build --------------------------
 # Non-fatal: a build failure should not abort container creation.

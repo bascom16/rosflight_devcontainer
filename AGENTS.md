@@ -21,6 +21,7 @@ template and follows the official
 - `.claude/settings.json` — Claude Code runs with `bypassPermissions` inside the container
 - `scripts/setup_workspace.sh` — clones the ROSflight repos, runs `rosdep`, builds with `colcon`
 - `scripts/sim_display.sh` — browser-viewable virtual X display (Xvfb + noVNC on port 6080) for the sim GUIs
+- `scripts/sim_launcher.sh` + `tools/sim_launcher/` — browser GUI (port 8090) that starts/stops sims and missions; see "Sim launcher" below
 - `src/` — ROS 2 packages (cloned here; gitignored)
   - `rosflight_ros_pkgs` — core ROS stack: `rosflight_io`, `rosflight_sim`, `rosflight_msgs`, and the `rosflight_firmware` submodule (SIL)
   - `rosplane` — fixed-wing autopilot (`rosplane_sim`)
@@ -120,6 +121,44 @@ Desktop the port is only reachable from the Mac while
 `postStartCommand`, and new shells switch to `DISPLAY=:99` when the host
 display is unusable.
 
+## Sim launcher
+
+`tools/sim_launcher/` is a NiceGUI web app (http://localhost:8090, started by
+`postStartCommand` via `scripts/sim_launcher.sh`; interactive shells also run
+`sim_launcher.sh banner`, which prints the URL and starts the app if needed). It lives in this repo, not in
+`src/`. Keep it that way, and reference upstream files (launch files, missions,
+param files) in place rather than copying them.
+
+- **Two Python environments.** The app runs in its own uv project (Python 3.12,
+  `tools/sim_launcher/.venv`) and must not import ROS. ROS work goes through
+  `sim_launcher/ros_bridge.py`, a long-lived helper run with the system
+  `/usr/bin/python3` and rclpy. It speaks JSON lines on stdin/stdout: service
+  calls in, replies plus `/status` and node-graph events out. Children get a
+  ROS environment with the venv stripped (`processes.ros_env`/`ros_shell`).
+  Start the app with `PYTHONPATH` unset, or Humble's 3.10 packages leak in.
+- **Vehicle profiles** are `tools/sim_launcher/profiles/*.yaml`: sim and
+  autopilot launch files, the firmware param file, the mission service, and
+  mission file globs (`{ws}` and `{share:PKG}` placeholders). Adding a vehicle
+  (e.g. rosevtol) means adding a profile; the UI picks it up on restart.
+- **Process handling.** Each launch runs in its own process group (stopped
+  with SIGINT, then SIGTERM, then SIGKILL) with cwd
+  `~/.local/state/sim_launcher/<airframe>/`, because `sil_board` keeps
+  `rosflight_memory/` in its cwd. "Kill all ROS processes" (`sweep.py`) kills
+  anything running from `install/` or `/opt/ros/`.
+- **Firmware quirks the launcher handles.**
+  - `sil_board` writes a default `mem.bin` on every boot, so the launcher
+    records completed setup in a `firmware_configured` marker file.
+  - Firmware setup must wait for `/all_params_received`:
+    `/param_load_from_file` silently skips parameters `rosflight_io` hasn't
+    fetched yet.
+  - Arm and RC-override state are read from `/status`, never assumed. The
+    simulated RC's `/toggle_*` services only toggle, and they don't exist in
+    VimFly mode.
+- Tests: `cd tools/sim_launcher && env -u PYTHONPATH uv run pytest`.
+- Planned: browser gamepad → `/sim/RC` (`rosflight_msgs/RCRaw`, channel layout
+  as in `rc.py`). It needs a launcher-owned launch file that omits `rc.py`,
+  since `src/` stays unmodified.
+
 ## Included tools
 
 - **AI coding agents:** Claude Code (Anthropic), Codex CLI (OpenAI)
@@ -130,9 +169,48 @@ The default shell is **bash**. zsh is still installed if you prefer it, but note
 that colcon's `install/setup.bash` cannot be sourced from zsh (it relies on
 `$BASH_SOURCE`) — under zsh use `install/setup.zsh` instead.
 
+## Two levels of git repos
+
+Most development happens in the ROSflight packages under `src/`, not in this
+repo. The workspace root is the **devcontainer repo** (container definition,
+setup scripts, these docs); each directory in `src/` is a **separate git repo**
+with its own `origin` under `github.com/rosflight/` and its own branch.
+
+- Never copy files from `src/` (or `build/`, `install/`, `log/`) into the
+  devcontainer repo, and never add new files to the devcontainer repo as a side
+  effect of package work. Changes to a package are made, committed and pushed
+  inside that package's repo (`git -C src/<repo> ...`).
+- Running `git status` at the root does not show changes in `src/`; check each
+  repo there separately.
+- Some `src/` repos carry their own agent instructions (e.g.
+  `src/rosevtol/AGENTS.md`); when working in one, read and follow them.
+
+## Tests and formatting (in the `src/` repos)
+
+```bash
+colcon test --packages-select <package_name>   # e.g. roscopter (ament gtest + lint)
+colcon test-result --verbose
+# One gtest binary directly:
+./build/<package_name>/<test_name>             # e.g. ./build/roscopter/estimator_test
+```
+
+The firmware unit tests (`src/rosflight_ros_pkgs/rosflight_firmware/test/`)
+are a plain CMake project, not built by colcon:
+
+```bash
+cd src/rosflight_ros_pkgs/rosflight_firmware
+cmake --preset test-release && cmake --build build/test-release
+./build/test-release/test/unit_tests --gtest_filter='<Suite>.<Test>'
+```
+
+`rosflight_ros_pkgs`, `rosplane` and `roscopter` each have a
+`fix_code_style.sh` at their root (clang-format with the repo's `.clang-format`,
+plus `ruff` for Python); run it in the repo you changed. Neither `clang-format`
+nor `ruff` is installed in the image, so install them first (e.g.
+`sudo apt-get install clang-format`, `uv tool install ruff`).
+
 ## Conventions
 
-- The `src/` repos are cloned, not vendored — do not commit their contents
-  to this repo. Edit them in place; each has its own upstream git history.
+- The `src/` repos are cloned, not vendored (see "Two levels of git repos").
 - Keep `scripts/setup_workspace.sh` idempotent (it must be safe to re-run).
 - `rosflight_firmware` is a git submodule of `rosflight_ros_pkgs`.

@@ -13,6 +13,11 @@
 /src/rosevtol/
 /src/rosflight_docs/
 
+# Sim launcher's uv environment and Python caches
+tools/sim_launcher/.venv/
+__pycache__/
+.pytest_cache/
+
 # Claude Code local (user-specific) settings
 .claude/settings.local.json
 
