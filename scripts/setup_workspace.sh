@@ -82,7 +82,21 @@ sudo apt-get update
 # rosdep init errors harmlessly if already initialized.
 sudo rosdep init >/dev/null 2>&1 || true
 rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro "${ROS_DISTRO}" -y
+# Some upstream packages declare dependencies with no rosdep key on every
+# distro. rosplane's package.xml has <depend>ament_index_cmake</depend>, which
+# does not exist on Humble (and its CMakeLists.txt never uses it), so a plain
+# `rosdep install` aborts before the build. Skip only the keys that cannot be
+# resolved on this distro; everything else is installed as usual.
+skip_keys=()
+while read -r key; do
+    [ -n "${key}" ] || continue
+    if ! rosdep resolve "${key}" --rosdistro "${ROS_DISTRO}" >/dev/null 2>&1; then
+        warn "No rosdep rule for '${key}' on ${ROS_DISTRO}; skipping it."
+        skip_keys+=("${key}")
+    fi
+done < <(rosdep keys --from-paths src --ignore-src --rosdistro "${ROS_DISTRO}" 2>/dev/null | sort -u)
+rosdep install --from-paths src --ignore-src --rosdistro "${ROS_DISTRO}" -y \
+    ${skip_keys[@]:+--skip-keys "${skip_keys[*]}"}
 
 # --- 5. Build -----------------------------------------------------------------
 if [ "${ROSFLIGHT_SKIP_BUILD}" = "1" ]; then
