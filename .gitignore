@@ -10,6 +10,8 @@
 /src/rosflight_ros_pkgs/
 /src/rosplane/
 /src/roscopter/
+/src/rosevtol/
+/src/rosflight_docs/
 
 # Claude Code local (user-specific) settings
 .claude/settings.local.json

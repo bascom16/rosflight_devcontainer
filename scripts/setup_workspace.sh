@@ -12,6 +12,8 @@
 # Environment variables:
 #   ROS_DISTRO           ROS 2 distro to source (default: humble)
 #   ROSFLIGHT_SKIP_BUILD if set to 1, clone + rosdep only (skip colcon build)
+#   ROSFLIGHT_VIZ_GAZEBO auto (default: clone the modern Gazebo visualizer on
+#                        non-Humble distros only), 1 (always) or 0 (never)
 #   ROSFLIGHT_BUILD_WORKERS  packages colcon builds in parallel (default: 2)
 #   ROSFLIGHT_BUILD_JOBS     compile jobs per package, i.e. make -j (default:
 #                            ~1 per 2 GB of RAM, capped at the CPU count). The
@@ -28,13 +30,34 @@ ROSFLIGHT_SKIP_BUILD="${ROSFLIGHT_SKIP_BUILD:-0}"
 log() { printf '\n\033[1;32m[setup_workspace]\033[0m %s\n' "$*"; }
 warn() { printf '\n\033[1;33m[setup_workspace]\033[0m %s\n' "$*"; }
 
-# Repositories to clone into src/. Format: "<dir> <url> <extra-git-args>".
+# Repositories to clone into src/. Format: "<dir> <url> <extra-git-args>", where
+# <dir> is relative to src/ (it may be nested inside an earlier entry).
 # Add or remove lines here to change which ROSflight packages are set up.
 REPOS=(
     "rosflight_ros_pkgs https://github.com/rosflight/rosflight_ros_pkgs --recursive"
     "rosplane          https://github.com/rosflight/rosplane"
     "roscopter         https://github.com/rosflight/roscopter"
+    # Private (needs GitHub credentials in the container: forwarded by Devsy and
+    # VS Code, or run `gh auth login`). A failed clone only warns; re-run this
+    # script after signing in.
+    "rosevtol          https://github.com/rosflight/rosevtol"
+    # mkdocs source of docs.rosflight.org (not a ROS package; colcon ignores it).
+    "rosflight_docs    https://github.com/rosflight/rosflight_docs"
 )
+# Modern Gazebo (gz sim 8 / Harmonic) visualizer. It is not a package of its own:
+# rosflight_sim's CMake builds it from rosflight_sim/simulators/. It needs
+# Gazebo Harmonic + ros_gz, which only exist as binaries on Jazzy and newer, so on
+# Humble it would be cloned but skip itself at build time; only clone it where it
+# can work. (Jazzy additionally needs `ros-jazzy-ros-gz`, which this image does not
+# install yet.) Set ROSFLIGHT_VIZ_GAZEBO=1 to clone it anyway, or 0 to never.
+case "${ROSFLIGHT_VIZ_GAZEBO:-auto}" in
+    1) clone_viz_gazebo=1 ;;
+    0) clone_viz_gazebo=0 ;;
+    *) [ "${ROS_DISTRO}" != "humble" ] && clone_viz_gazebo=1 || clone_viz_gazebo=0 ;;
+esac
+if [ "${clone_viz_gazebo}" = "1" ]; then
+    REPOS+=("rosflight_ros_pkgs/rosflight_sim/simulators/rosflight_viz_gazebo https://github.com/rosflight/rosflight_viz_gazebo")
+fi
 
 # --- 1. Folder structure ------------------------------------------------------
 log "Ensuring workspace structure at ${WS_ROOT}"
@@ -52,9 +75,17 @@ for entry in "${REPOS[@]}"; do
         # Make sure submodules (e.g. rosflight_firmware) are initialized.
         git -C "${dir}" submodule update --init --recursive || \
             warn "Could not update submodules for '${dir}'."
+    elif [ "$(dirname "${dir}")" != "." ] && [ ! -d "$(dirname "${dir}")" ]; then
+        warn "Skipping '${dir}': its parent directory '$(dirname "${dir}")' does not exist (clone failed?)."
     else
         log "Cloning ${url} -> src/${dir}"
-        git clone "${extra_args[@]}" "${url}" "${dir}"
+        # GIT_TERMINAL_PROMPT=0: fail immediately instead of waiting for a
+        # username/password that nobody can type during container creation.
+        # A failed clone (e.g. the private rosevtol repo without credentials)
+        # must not abort the whole setup.
+        if ! GIT_TERMINAL_PROMPT=0 git clone "${extra_args[@]}" "${url}" "${dir}"; then
+            warn "Could not clone ${url}. If it is private, sign in (gh auth login, or forward your Git credentials) and re-run: bash scripts/setup_workspace.sh"
+        fi
     fi
 done
 
