@@ -9,7 +9,11 @@
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
-            "ROS_DISTRO": "humble"
+            "ROS_DISTRO": "humble",
+            // Empty = native architecture. Set ROSFLIGHT_PLATFORM=linux/amd64 on
+            // the host to build an amd64 image (e.g. Gazebo Classic on Apple
+            // Silicon); see the README.
+            "TARGET_PLATFORM": "${localEnv:ROSFLIGHT_PLATFORM}"
         }
     },
 

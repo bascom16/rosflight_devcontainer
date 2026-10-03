@@ -5,7 +5,10 @@
 # official ROSflight Docker base) contains. osrf/ros is published for amd64
 # only, so on Apple Silicon it runs under Rosetta emulation; this image builds
 # natively on both amd64 and arm64. To force amd64 (e.g. for Gazebo Classic,
-# which has no arm64 packages), pass --platform linux/amd64 (see README).
+# which has no arm64 packages), set ROSFLIGHT_PLATFORM=linux/amd64 on the host
+# when running devsy (see README): devcontainer.json passes it in as the
+# TARGET_PLATFORM build arg below. Devsy's `--platform` flag alone only affects
+# `docker run`, not this image build.
 #
 # The ROS distro is configurable via the ROS_DISTRO build arg (set it in
 # .devcontainer/devcontainer.json). Default is Humble, which is the only distro
@@ -17,7 +20,9 @@
 # is bind-mounted and is not available during the image build.
 
 ARG ROS_DISTRO=humble
-FROM ros:${ROS_DISTRO}-ros-base
+# Empty (the default) builds for the host's native platform.
+ARG TARGET_PLATFORM=
+FROM --platform=${TARGET_PLATFORM:-$BUILDPLATFORM} ros:${ROS_DISTRO}-ros-base
 
 # Re-declare after FROM so the value is available in later layers, and export it
 # as an env var so setup.sh / setup_workspace.sh can read $ROS_DISTRO.
