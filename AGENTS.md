@@ -38,7 +38,11 @@ template and follows the official
   back to `osrf/ros:*-desktop`: it is amd64-only, which forces Rosetta
   emulation on Apple Silicon.
 - Gazebo Classic has no arm64 packages; on Apple Silicon it needs an amd64
-  container: `devsy workspace up . --platform linux/amd64 --recreate`.
+  container:
+  `ROSFLIGHT_PLATFORM=linux/amd64 devsy workspace up . --platform linux/amd64 --recreate`.
+  `ROSFLIGHT_PLATFORM` feeds the `TARGET_PLATFORM` build arg (Dockerfile
+  `FROM --platform=...`); Devsy's `--platform` alone only affects `docker run`
+  and its internal BuildKit would reuse the arm64 image (`exit status 125`).
 - `scripts/setup_workspace.sh` records the build architecture in
   `install/.build_arch` and wipes `build/`/`install/`/`log/` when it changes.
 

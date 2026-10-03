@@ -117,8 +117,14 @@ it on an Apple Silicon Mac, run the container as amd64 under Rosetta
 emulation (slower):
 
 ```bash
-devsy workspace up . --ide vscode --platform linux/amd64 --recreate
+ROSFLIGHT_PLATFORM=linux/amd64 devsy workspace up . --ide vscode --platform linux/amd64 --recreate
 ```
+
+`ROSFLIGHT_PLATFORM` is what makes the *image build* use amd64 (it becomes the
+`TARGET_PLATFORM` build arg in `devcontainer.json`). Devsy's `--platform` flag
+only applies to `docker run`: on its own it fails with `exit status 125`,
+because the image Devsy built is still arm64. To go back to native arm64, run
+`devsy workspace up . --ide vscode --recreate` without the variable.
 
 Switching architectures needs a clean workspace build;
 `scripts/setup_workspace.sh` detects a `build/`/`install/` from the other
