@@ -1,7 +1,7 @@
 {
     "name": "ROSflight Sim Devcontainer",
 
-    // Builds the ROSflight base image (osrf/ros:${ROS_DISTRO}-desktop).
+    // Builds the ROSflight base image (ros:${ROS_DISTRO}-ros-base + ros-${ROS_DISTRO}-desktop).
     // Change the ROS distro in exactly one place: the ROS_DISTRO build arg
     // below. It propagates to the Dockerfile ENV and to the setup scripts.
     // NOTE: Gazebo Classic only works on "humble". "jazzy" is supported too,
@@ -68,5 +68,8 @@
 
     // Installs Claude Code + Codex, wires up ROS sourcing, then clones the
     // ROSflight repos and builds the workspace (rosdep + colcon build).
-    "postCreateCommand": "bash .devcontainer/setup.sh"
+    // Output is also written to /tmp/rosflight_setup.log: Devsy runs this hook
+    // after `devsy workspace up` has already reported "ready" and does not show
+    // its output, so the log is the way to follow progress or find a failure.
+    "postCreateCommand": "bash -c 'set -o pipefail; bash .devcontainer/setup.sh 2>&1 | tee /tmp/rosflight_setup.log'"
 }
