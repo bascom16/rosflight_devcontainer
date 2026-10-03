@@ -1,9 +1,15 @@
 # ROSflight simulation devcontainer.
 #
-# Uses the same base image as the official ROSflight Docker setup
-# (osrf/ros:${ROS_DISTRO}-desktop). The ROS distro is configurable via the
-# ROS_DISTRO build arg (set it in .devcontainer/devcontainer.json). Default is
-# Humble, which is the only distro that supports Gazebo Classic.
+# Starts from the official multi-arch ros:${ROS_DISTRO}-ros-base image and adds
+# ros-${ROS_DISTRO}-desktop, which is what osrf/ros:${ROS_DISTRO}-desktop (the
+# official ROSflight Docker base) contains. osrf/ros is published for amd64
+# only, so on Apple Silicon it runs under Rosetta emulation; this image builds
+# natively on both amd64 and arm64. To force amd64 (e.g. for Gazebo Classic,
+# which has no arm64 packages), pass --platform linux/amd64 (see README).
+#
+# The ROS distro is configurable via the ROS_DISTRO build arg (set it in
+# .devcontainer/devcontainer.json). Default is Humble, which is the only distro
+# that supports Gazebo Classic.
 #
 # This Dockerfile only installs system/ROS tooling and creates the user. The AI
 # coding agents (Claude Code, Codex) and the ROS workspace build happen at
@@ -11,7 +17,7 @@
 # is bind-mounted and is not available during the image build.
 
 ARG ROS_DISTRO=humble
-FROM osrf/ros:${ROS_DISTRO}-desktop
+FROM ros:${ROS_DISTRO}-ros-base
 
 # Re-declare after FROM so the value is available in later layers, and export it
 # as an env var so setup.sh / setup_workspace.sh can read $ROS_DISTRO.
@@ -24,12 +30,13 @@ ARG USERNAME=rosflight
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# System + ROS dev tools. Mirrors the ROSflight docker image
-# (ros-dev-tools, plotjuggler, zsh, vim) and adds the reference template's
-# developer conveniences (git, curl, tmux, ripgrep, ...).
+# ROS desktop (RViz, rqt, ...) + system/ROS dev tools. Mirrors the ROSflight
+# docker image (ros-dev-tools, plotjuggler, zsh, vim) and adds the reference
+# template's developer conveniences (git, curl, tmux, ripgrep, ...).
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
+        ros-${ROS_DISTRO}-desktop \
         ros-dev-tools \
         ros-${ROS_DISTRO}-plotjuggler-ros \
         git \

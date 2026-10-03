@@ -13,7 +13,7 @@ template and follows the official
 ## Project structure
 
 - `.devcontainer/` — container definition
-  - `Dockerfile` — `osrf/ros:${ROS_DISTRO}-desktop` base + ROS/dev tooling + non-root `rosflight` user
+  - `Dockerfile` — multi-arch `ros:${ROS_DISTRO}-ros-base` + `ros-${ROS_DISTRO}-desktop` + ROS/dev tooling + non-root `rosflight` user
   - `devcontainer.json` — build args, features (Node, GitHub CLI), X11/networking, extensions, `postCreateCommand`
   - `setup.sh` — post-create: installs Claude Code + Codex, wires ROS sourcing, runs the workspace setup
   - `.bash_aliases` — git + colcon shortcuts
@@ -31,6 +31,16 @@ template and follows the official
   `.devcontainer/devcontainer.json` (default: **`humble`**, Ubuntu 22.04).
 - Gazebo Classic only works on **Humble**. On Jazzy, use the standalone (RViz)
   or HoloOcean sims.
+
+## CPU architecture
+
+- The image builds natively on amd64 and arm64 (Apple Silicon). Do not switch
+  back to `osrf/ros:*-desktop`: it is amd64-only, which forces Rosetta
+  emulation on Apple Silicon.
+- Gazebo Classic has no arm64 packages; on Apple Silicon it needs an amd64
+  container: `devsy workspace up . --platform linux/amd64 --recreate`.
+- `scripts/setup_workspace.sh` records the build architecture in
+  `install/.build_arch` and wipes `build/`/`install/`/`log/` when it changes.
 
 ## Building
 
@@ -66,7 +76,7 @@ ros2 launch rosflight_sim fixedwing_standalone.launch.py
 # Add keyboard manual control (VimFly):
 ros2 launch rosflight_sim multirotor_standalone.launch.py use_vimfly:=true
 
-# Gazebo Classic sim — Humble only
+# Gazebo Classic sim — Humble on amd64 only
 source /usr/share/gazebo/setup.sh
 ros2 launch rosflight_sim multirotor_gazebo.launch.py
 

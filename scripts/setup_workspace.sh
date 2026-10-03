@@ -102,10 +102,32 @@ else
     ROSFLIGHT_BUILD_JOBS="${ROSFLIGHT_BUILD_JOBS:-${default_jobs}}"
     ROSFLIGHT_BUILD_WORKERS="${ROSFLIGHT_BUILD_WORKERS:-2}"
 
+    # build/ and install/ live in the bind-mounted workspace, so they survive a
+    # container rebuild. Binaries from another CPU architecture (e.g. an old
+    # amd64/Rosetta container on Apple Silicon) cannot be reused: wipe them.
+    # Pre-marker builds are identified from the ELF header of a built library
+    # (e_machine at byte 18: 0x3e = x86_64, 0xb7 = aarch64).
+    arch_marker="${WS_ROOT}/install/.build_arch"
+    built_arch=""
+    if [ -f "${arch_marker}" ]; then
+        built_arch="$(cat "${arch_marker}")"
+    elif [ -d "${WS_ROOT}/install" ]; then
+        elf="$(find "${WS_ROOT}/install" -name '*.so' -type f -print -quit 2>/dev/null || true)"
+        case "$(od -An -tx1 -j18 -N1 "${elf}" 2>/dev/null | tr -d ' ')" in
+            3e) built_arch="x86_64" ;;
+            b7) built_arch="aarch64" ;;
+        esac
+    fi
+    if [ -n "${built_arch}" ] && [ "${built_arch}" != "$(uname -m)" ]; then
+        warn "Existing build is for ${built_arch}, container is $(uname -m); removing build/ install/ log/."
+        rm -rf "${WS_ROOT}/build" "${WS_ROOT}/install" "${WS_ROOT}/log"
+    fi
+
     log "Building the workspace with colcon (this can take several minutes)..."
     log "Parallelism: ${ROSFLIGHT_BUILD_WORKERS} packages x ${ROSFLIGHT_BUILD_JOBS} jobs ($(( mem_kb / 1024 / 1024 )) GB RAM detected)"
     MAKEFLAGS="-j${ROSFLIGHT_BUILD_JOBS}" \
         colcon build --symlink-install --parallel-workers "${ROSFLIGHT_BUILD_WORKERS}"
+    uname -m > "${arch_marker}"
 fi
 
 # --- Done ---------------------------------------------------------------------

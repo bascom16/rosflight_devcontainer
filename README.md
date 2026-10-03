@@ -47,7 +47,7 @@ From the workspace root (open a fresh shell so ROS is sourced, or
 ros2 launch rosflight_sim multirotor_standalone.launch.py             # RViz standalone
 ros2 launch rosflight_sim fixedwing_standalone.launch.py use_vimfly:=true
 
-# Gazebo Classic — Humble only:
+# Gazebo Classic — Humble on amd64 only (see "CPU architecture" below):
 source /usr/share/gazebo/setup.sh
 ros2 launch rosflight_sim multirotor_gazebo.launch.py
 
@@ -70,8 +70,8 @@ the container starts. Open it in your browser:
 New shells set `DISPLAY=:99` automatically when the host display is unusable,
 so `ros2 launch ...` windows show up there. Manage the display with
 `bash scripts/sim_display.sh [start|stop|restart|status]`. Rendering happens on
-the CPU, so expect it to be slower than native (especially on Apple Silicon,
-where the container runs under x86 emulation).
+the CPU, so expect it to be slower than native (much slower if the container
+runs as amd64 under emulation on Apple Silicon; see below).
 
 
 ## Troubleshooting
@@ -79,6 +79,25 @@ where the container runs under x86 emulation).
 Frankly, just ask any capable AI agent for help. As of July 2026 this will probably be more effective than outdated instructions in this README.md. 
 
 You can point your AI agent to the instructions on the [project website](https://docs.rosflight.org/latest/user-guide/overview/) for context.
+
+## CPU architecture (Apple Silicon)
+
+The image builds natively for whichever architecture your Docker runs: arm64
+on Apple Silicon Macs, amd64 on most Linux/Windows machines. Native arm64 is
+much faster than emulation and supports everything set up here (ROS 2, the
+standalone/RViz sims, ROSplane, ROScopter, PlotJuggler, firmware toolchains).
+
+The exception is **Gazebo Classic**, which has no arm64 packages. If you need
+it on an Apple Silicon Mac, run the container as amd64 under Rosetta
+emulation (slower):
+
+```bash
+devsy workspace up . --ide vscode --platform linux/amd64 --recreate
+```
+
+Switching architectures needs a clean workspace build;
+`scripts/setup_workspace.sh` detects a `build/`/`install/` from the other
+architecture and removes it automatically.
 
 ## Changing the ROS distribution
 
