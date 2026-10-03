@@ -67,6 +67,17 @@ the container starts. Open it in your browser:
 
 **http://localhost:6080/vnc.html?autoconnect=1&resize=scale**
 
+With Docker Desktop on macOS the container's `--network=host` is the Docker VM's
+network, so `localhost:6080` is **not** reachable from the Mac by default.
+Forward the port and keep the command running while you use the page:
+
+```bash
+devsy workspace ssh <workspace-name> -L 6080:localhost:6080
+```
+
+(`devsy workspace list` shows the workspace name, e.g. `arm64-native-rosflight`.
+Your IDE's port forwarding does the same thing if you connect with one.)
+
 New shells set `DISPLAY=:99` automatically when the host display is unusable,
 so `ros2 launch ...` windows show up there. Manage the display with
 `bash scripts/sim_display.sh [start|stop|restart|status]`. Rendering happens on
@@ -75,6 +86,20 @@ runs as amd64 under emulation on Apple Silicon; see below).
 
 
 ## Troubleshooting
+
+**The first build keeps going after `devsy workspace up` returns.** Devsy runs
+`postCreateCommand` (tools, `rosdep`, `colcon build`) inside the container after
+it has already reported "ready", and does not show that output. Follow it with:
+
+```bash
+devsy workspace exec <workspace-name> -- tail -f /tmp/rosflight_setup.log
+```
+
+The workspace is built once `install/.build_arch` exists. A failed step (e.g.
+`rosdep`) is logged as an error there, and the container is still usable;
+re-run `bash scripts/setup_workspace.sh` after fixing it. In non-interactive
+shells (`devsy workspace exec <name> -- bash -lc '...'`) ROS and the workspace
+are sourced too, via `~/.rosflight_env.bash`.
 
 Frankly, just ask any capable AI agent for help. As of July 2026 this will probably be more effective than outdated instructions in this README.md. 
 

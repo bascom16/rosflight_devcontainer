@@ -15,7 +15,7 @@ template and follows the official
 - `.devcontainer/` — container definition
   - `Dockerfile` — multi-arch `ros:${ROS_DISTRO}-ros-base` + `ros-${ROS_DISTRO}-desktop` + ROS/dev tooling + non-root `rosflight` user
   - `devcontainer.json` — build args, features (Node, GitHub CLI), X11/networking, extensions, `postCreateCommand`
-  - `setup.sh` — post-create: installs Claude Code + Codex, wires ROS sourcing, runs the workspace setup
+  - `setup.sh` — post-create: installs Claude Code + Codex, wires ROS sourcing (`~/.rosflight_env.bash`, sourced from the top of `~/.bashrc` so non-interactive `bash -lc` shells get ROS too), runs the workspace setup. Its output goes to `/tmp/rosflight_setup.log`
   - `.bash_aliases` — git + colcon shortcuts
 - `.claude/settings.json` — Claude Code runs with `bypassPermissions` inside the container
 - `scripts/setup_workspace.sh` — clones the ROSflight repos, runs `rosdep`, builds with `colcon`
@@ -60,6 +60,14 @@ The devcontainer runs this automatically on creation via
 colcon build --symlink-install --packages-select <package_name>
 ```
 
+`rosdep install` skips dependency keys that have no rosdep rule on the current
+distro (e.g. `rosplane` declares `ament_index_cmake`, which does not exist on
+Humble); the script logs a warning for each one rather than aborting the build.
+
+Devsy runs `postCreateCommand` after `devsy workspace up` has reported "ready",
+so the build may still be running when `up` returns; follow
+`/tmp/rosflight_setup.log` in the container.
+
 If memory is constrained: `colcon build --executor sequential`.
 `scripts/setup_workspace.sh` already limits parallelism by available RAM
 (override with `ROSFLIGHT_BUILD_WORKERS` / `ROSFLIGHT_BUILD_JOBS`), because an
@@ -91,7 +99,9 @@ not appear, run `xhost +local:docker` on the host.
 On macOS (XQuartz only offers OpenGL 1.4; RViz needs 1.5+) or without a host
 X server, use the virtual display instead: `scripts/sim_display.sh` runs Xvfb
 (Mesa llvmpipe) + noVNC on `DISPLAY=:99`, viewable at
-`http://localhost:6080/vnc.html?autoconnect=1&resize=scale`. It is started by
+`http://localhost:6080/vnc.html?autoconnect=1&resize=scale` (on macOS Docker
+Desktop the port is only reachable from the Mac while
+`devsy workspace ssh <name> -L 6080:localhost:6080` is running). It is started by
 `postStartCommand`, and new shells switch to `DISPLAY=:99` when the host
 display is unusable.
 
